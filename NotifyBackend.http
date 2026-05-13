@@ -1,0 +1,6 @@
+@NotifyBackend_HostAddress = http://localhost:5165
+
+GET {{NotifyBackend_HostAddress}}/api/notes/
+Accept: application/json
+
+###
