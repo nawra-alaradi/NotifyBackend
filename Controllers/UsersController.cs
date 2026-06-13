@@ -111,8 +111,7 @@ namespace NotifyBackend.Controllers
                        ID= user.ID,
                        Name = user.Name,
                         Email = user.Email,
-                        Password = user.Password,
-                        ThemeSetting = user.ThemeSetting,
+                        //Password = user.Password,
                         CreatedOn = DateTime.UtcNow.AddHours(3),
                         LastModified = DateTime.UtcNow.AddHours(3)
                     };

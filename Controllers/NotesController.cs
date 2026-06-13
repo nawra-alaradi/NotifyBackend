@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using NotifyBackend.Models;
@@ -7,6 +8,7 @@ namespace NotifyBackend.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [Authorize]
     public class NotesController : ControllerBase
     {
         private readonly DatabaseContext _db;
@@ -97,7 +99,7 @@ namespace NotifyBackend.Controllers
                     {
                         UserID = note.UserID,
                         Title = note.Title,
-                        Content = note.Content,
+                        NoteContent = note.NoteContent,
                         Summary = note.Summary,
                         HasMedia = note.HasMedia,
                         CreatedOn = DateTime.UtcNow.AddHours(3),
@@ -120,7 +122,7 @@ namespace NotifyBackend.Controllers
                     }
                     else {
                         newNote.Title = note.Title;
-                        newNote.Content = note.Content;
+                        newNote.NoteContent = note.NoteContent;
                         newNote.Summary = note.Summary;
                         newNote.HasMedia = note.HasMedia;
                         newNote.LastModified = DateTime.Now;
@@ -177,6 +179,9 @@ namespace NotifyBackend.Controllers
             return new ApiResponse { Success = success, Message = message, Data = targetNote, DataCount = (targetNote == null) ? 0 : 1 };
         }
 
-        
+        // For a single public endpoint:
+        [AllowAnonymous]
+        [HttpGet("health")]
+        public IActionResult HealthCheck() => Ok("OK");
     }
 }

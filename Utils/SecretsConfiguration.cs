@@ -4,58 +4,63 @@ namespace NotifyBackend.Utils
 {
     public class SecretsConfiguration
     {
-        public static string secretName = "notify-secret";
+        public string DbConnection { get; set; } = string.Empty;
+        public AwsSqs AwsSqs { get; set; } = new();
+        public AwsS3 AwsS3 { get; set; } = new();
 
-        [JsonProperty("db-connection")]
-        public string DbConnection { get; set; }
+        public Cognito Cognito { get; set; } = new();
 
-        [JsonProperty("smtp-server")]
-        public string SmtpServer { get; set; }
+        public static SecretsConfiguration FromEnvironment(IConfiguration? config = null) => new()
+        {
+            DbConnection = Environment.GetEnvironmentVariable("DBConnection") ?? config?["ConnectionStrings:DBConnection"] ??string.Empty,
 
-        [JsonProperty("sqs-queue-id")]
-        public string SqsQueueId { get; set; }
+            AwsSqs = JsonConvert.DeserializeObject<AwsSqs>(
+                Environment.GetEnvironmentVariable("AwsSqs") ?? config?["AwsSqs"] ?? "{}"
+            ) ?? new AwsSqs(),
 
-        [JsonProperty("from-address")]
-        public string FromAddress { get; set; }
+            AwsS3 = JsonConvert.DeserializeObject<AwsS3>(
+                Environment.GetEnvironmentVariable("AwsS3") ?? config?["AwsS3"] ?? "{}"
+            ) ?? new AwsS3(),
 
-        [JsonProperty("sqs-queue-name")]
-        public string SqsQueueName { get; set; }
-
-        [JsonProperty("sqs-queue-url")]
-        public string SqsQueueUrl { get; set; }
-
-        // Fixed: Changed from string to Object types
-        [JsonProperty("AzureAd")]
-        public AzureAd AzureAd { get; set; }
-
-        [JsonProperty("AwsSqs")]
-        public AwsSqs AwsSqs { get; set; }
-
-        [JsonProperty("AwsS3")]
-        public AwsS3 AwsS3 { get; set; }
-    }
-
-    public class AzureAd
-    {
-        public string Instance { get; set; }
-        public string Domain { get; set; }
-        public string TenantId { get; set; }
-        public string CallbackPath { get; set; }
-        public string ClientId { get; set; }
-        public string ClientSecret { get; set; }
-        public string SignedOutCallbackPath { get; set; }
-        public string Audience { get; set; }
+            Cognito = JsonConvert.DeserializeObject<Cognito>(
+                Environment.GetEnvironmentVariable("Cognito") ?? config?["Cognito"] ?? "{}"
+            ) ?? new Cognito(),
+        };
     }
 
     public class AwsSqs
     {
-        public string QueueUrl { get; set; }
-        public string Region { get; set; }
+        [JsonProperty("QueueUrl")]
+        public string QueueUrl { get; set; } = string.Empty;
+
+        [JsonProperty("Region")]
+        public string Region { get; set; } = string.Empty;
+
+        [JsonProperty("QueueName")]
+        public string QueueName { get; set; } = string.Empty;
+
+        [JsonProperty("QueueID")]
+        public string QueueID { get; set; } = string.Empty;
     }
 
     public class AwsS3
     {
-        public string BucketName { get; set; }
-        public string Region { get; set; }
+        [JsonProperty("BucketName")]
+        public string BucketName { get; set; } = string.Empty;
+
+        [JsonProperty("Region")]
+        public string Region { get; set; } = string.Empty;
+    }
+
+    public class Cognito
+    {
+        [JsonProperty("UserPoolId")]
+        public string UserPoolId { get; set; } = string.Empty;
+        [JsonProperty("ClientId")]
+        public string ClientId { get; set; } = string.Empty;
+        [JsonProperty("Region")]
+        public string Region { get; set; } = string.Empty;
+        // Build the authority URL from the pool ID and region
+        public string Authority => $"https://cognito-idp.{Region}.amazonaws.com/{UserPoolId}";
     }
 }
