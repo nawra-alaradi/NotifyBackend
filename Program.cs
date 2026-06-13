@@ -1,7 +1,9 @@
 using Amazon;
 using Amazon.Lambda.Core;
 using Amazon.S3;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using NotifyBackend;
 using NotifyBackend.Utils;
 
@@ -16,6 +18,25 @@ LambdaLogger.Log(sqsconfig.ToString());
 
 var s3config = secretsConfiguration.AwsS3;
 LambdaLogger.Log(s3config.ToString());
+
+// ✅ ADD: Cognito JWT Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = cognitoConfig.Authority;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            ValidateIssuer = true,
+            ValidIssuer = cognitoConfig.Authority,
+            ValidateAudience = true,
+            ValidAudience = cognitoConfig.ClientId,
+            ValidateLifetime = true
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 
 // Add DbContext
 builder.Services.AddDbContext<DatabaseContext>(options =>
@@ -64,7 +85,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors();
+app.UseAuthentication();   //  ADD — must be BEFORE UseAuthorization
 app.UseAuthorization();
+
 app.UseEndpoints(endpoints => endpoints.MapControllers());
 
 app.Run();
