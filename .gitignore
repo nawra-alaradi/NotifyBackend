@@ -7,8 +7,12 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/Dotnet.gitignore
 # Ignore sensitive configuration files
+*/appsettings.json
+*/NotifyBackend/appsettings.json
+NotifyBackend/appsettings.json
+
 appsettings.json
-Utils/SecretsManager.cs
+NotifyBackend/Utils/SecretsManager.cs
 
 # Ignore Visual Studio IDE folders
 .vs/

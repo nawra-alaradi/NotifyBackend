@@ -24,8 +24,8 @@ namespace NotifyBackend.Models
         public string FileUrl { get; set; }
         [Column("Summary")]
         public string? Summary { get; set; }
-        [Column("CreatedOn")]
-        public DateTime CreatedOn { get; set; }
+        [Column("CreatedAt")]
+        public DateTime CreatedAt { get; set; }
         [Column("LastModified")]
         public DateTime LastModified { get; set; }
     }

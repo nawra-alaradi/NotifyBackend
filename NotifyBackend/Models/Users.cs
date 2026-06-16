@@ -16,10 +16,13 @@ namespace NotifyBackend.Models
 
         //public string Password { get; set; }
 
-        [Column("CreatedOn")]
-        public DateTime CreatedOn { get; set; }
+        [Column("CreatedAt")]
+        public DateTime CreatedAt { get; set; }
         [Column("LastModified")]
         public DateTime LastModified { get; set; }
+        [Column("CognitoSub")]
+
+        public string CognitoSub { get; set; } = string.Empty; // ← add this
 
     }
 }

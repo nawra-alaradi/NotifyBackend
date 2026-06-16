@@ -2,6 +2,7 @@ using Amazon;
 using Amazon.Lambda.Core;
 using Amazon.S3;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using NotifyBackend;
@@ -12,12 +13,17 @@ var builder = WebApplication.CreateBuilder(args);
 // Load config from environment variables
 var secretsConfiguration = SecretsConfiguration.FromEnvironment(builder.Configuration);
 var cognitoConfig = secretsConfiguration.Cognito;
+LambdaLogger.Log($"Cognito Authority: {cognitoConfig.Authority}");
+
+Console.WriteLine($">>> Cognito Authority: {cognitoConfig.Authority}");
+Console.WriteLine($">>> Cognito ClientId: {cognitoConfig.ClientId}");
 
 var sqsconfig = secretsConfiguration.AwsSqs;
 LambdaLogger.Log(sqsconfig.ToString());
 
 var s3config = secretsConfiguration.AwsS3;
 LambdaLogger.Log(s3config.ToString());
+
 
 // ✅ ADD: Cognito JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -29,7 +35,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidateIssuer = true,
             ValidIssuer = cognitoConfig.Authority,
-            ValidateAudience = true,
+            ValidateAudience = false,
             ValidAudience = cognitoConfig.ClientId,
             ValidateLifetime = true
         };
@@ -81,13 +87,35 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+// Program.cs
+app.UseExceptionHandler(appError =>
+{
+    appError.Run(async context =>
+    {
+        var exceptionFeature = context.Features.Get<IExceptionHandlerFeature>();
+        var exception = exceptionFeature?.Error; // ← the real exception
 
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+
+        await context.Response.WriteAsJsonAsync(new ApiResponse
+        {
+            Success = false,
+            Message = "An unexpected error occurred " + (app.Environment.IsDevelopment() ? exception?.ToString() : null),
+            // In development, expose details; in production, hide them
+            Data = null, DataCount=0
+        });
+    });
+});
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors();
 app.UseAuthentication();   //  ADD — must be BEFORE UseAuthorization
 app.UseAuthorization();
 
-app.UseEndpoints(endpoints => endpoints.MapControllers());
+//app.UseEndpoints(endpoints => endpoints.MapControllers());
+
+// Replace UseEndpoints with top-level MapControllers
+app.MapControllers();
 
 app.Run();

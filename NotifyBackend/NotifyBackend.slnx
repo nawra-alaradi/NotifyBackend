@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../PostSignup/src/PostSignup/PostSignup.csproj" Id="c1c7f59a-ab85-4f05-8564-99f9943f2380" />
+  <Project Path="NotifyBackend.csproj" />
+</Solution>

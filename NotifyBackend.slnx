@@ -1,3 +1,7 @@
 <Solution>
-  <Project Path="NotifyBackend.csproj" />
+  <Folder Name="/PostSignup/" />
+  <Folder Name="/PostSignup/src/">
+    <Project Path="PostSignup/src/PostSignup/PostSignup.csproj" />
+  </Folder>
+  <Project Path="NotifyBackend/NotifyBackend.csproj" />
 </Solution>
