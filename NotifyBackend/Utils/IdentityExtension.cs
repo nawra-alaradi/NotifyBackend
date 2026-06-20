@@ -7,36 +7,36 @@ namespace NotifyBackend.Utils
     public static class IdentityExtensions
     {
 
-        public static string GetUserSub(this IIdentity identity)
+        public static string? GetUserSub(this IIdentity identity)
         {
             var claim = ((ClaimsIdentity)identity).FindFirst(ClaimTypes.NameIdentifier)?? ((ClaimsIdentity)identity).FindFirst("sub");
-            var value = (claim != null) ? claim.Value : string.Empty;
+            var value = (claim != null) ? claim.Value : null;
             return value;
         }
 
 
-        public static string GetUserName(this IIdentity identity)
+        public static string? GetUserName(this IIdentity identity)
         {
             var claim = ((ClaimsIdentity)identity).FindFirst(ClaimTypes.Name);
-            var value = (claim != null) ? claim.Value : string.Empty;
+            var value = (claim != null) ? claim.Value : null;
             return value;
         }
 
 
-        public static string GetUserEmail(this IIdentity identity)
+        public static string? GetUserEmail(this IIdentity identity)
         {
             var claim = ((ClaimsIdentity)identity).FindFirst(ClaimTypes.Email)?? ((ClaimsIdentity)identity).FindFirst("email");
-            var value = (claim != null) ? claim.Value : string.Empty;
+            var value = (claim != null) ? claim.Value : null;
             return value;
         }
 
 
 
 
-        public static string GetUserGender(this IIdentity identity)
+        public static string? GetUserGender(this IIdentity identity)
         {
             var claim = ((ClaimsIdentity)identity).FindFirst(ClaimTypes.Gender);
-            var value = (claim != null) ? claim.Value : string.Empty;
+            var value = (claim != null) ? claim.Value : null;
             return value;
         }
 
@@ -44,7 +44,7 @@ namespace NotifyBackend.Utils
         public static Users? GetNotifyUser(this IIdentity identity, DatabaseContext db)
         {
             var claim = ((ClaimsIdentity)identity).FindFirst(ClaimTypes.NameIdentifier);
-            var value = (claim != null) ? claim.Value : string.Empty;
+            var value = (claim != null) ? claim.Value : null        ;
 
             var user = db.Users.FirstOrDefault(a => a.CognitoSub.Equals(value));
             return user;
@@ -61,13 +61,13 @@ namespace NotifyBackend.Utils
         }
 
 
-        public static int GetUserID(this IIdentity identity, DatabaseContext db)
+        public static int? GetUserID(this IIdentity identity, DatabaseContext db)
         {
             var claim = ((ClaimsIdentity)identity).FindFirst(ClaimTypes.NameIdentifier);
             var value = (claim != null) ? claim.Value : string.Empty;
 
             var user = db.Users.FirstOrDefault(a => a.CognitoSub.Equals(value));
-            return (user == null) ? 0 : user.ID;
+            return (user == null) ? null : user.ID;
         }
     }
 }

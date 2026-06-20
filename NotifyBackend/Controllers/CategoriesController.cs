@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NotifyBackend.Models;
 using NotifyBackend.Utils;
@@ -7,6 +8,7 @@ namespace NotifyBackend.Controllers
 {
     [Route("[controller]")]
     [ApiController]
+    [Authorize]
     public class CategoriesController : ControllerBase
     {
 
@@ -21,40 +23,39 @@ namespace NotifyBackend.Controllers
         }
 
         [HttpGet]
-        public ApiResponse Get()
+        public ActionResult<ApiResponse> Get()
         {
-            var userID = 1;
-            bool success = false;
-            string message = "";
-            var categories = new List<CategoriesDefinitions>();
-            try
-            {
-                categories = _db.CategoriesDefinitions.ToList();
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+                return Unauthorized(new ApiResponse
+                {
+                    Success = false,
+                    Message = "User is not authenticated",
+                    Data = null,
+                    DataCount = 0
+                });
 
-                success = true;
-                message = "Successfully Retreived the categories";
-
-            }
-            catch (Exception ex)
-            {
-                success = false;
-                message = "An error occurred while retrieving categories: " + ex.Message;
-            }
-
-            return new ApiResponse { Success = success, Message = message, Data = categories, DataCount = categories == null ? 0 : categories.Count };
+            var categories = _db.CategoriesDefinitions.ToList();
+            return Ok(new ApiResponse { Success = true, Message = "Successfully Retreived the categories", Data = categories, DataCount = categories.Count });
 
         }
 
 
         [HttpPost("EditCategory")]
-        public ApiResponse Edit([FromBody] CategoriesDefinitions category)
+        public ActionResult<ApiResponse> Edit([FromBody] CategoriesDefinitions category)
         {
-            var userID = 1;
+
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+                return Unauthorized(new ApiResponse
+                {
+                    Success = false,
+                    Message = "User is not authenticated",
+                    Data = null,
+                    DataCount = 0
+                });
             bool success = false;
             string message = "";
             dynamic? newCategory = null;
-            try
-            {
+         
                 if (category.ID == 0)
                 {
                     newCategory = new CategoriesDefinitions
@@ -92,14 +93,8 @@ namespace NotifyBackend.Controllers
 
                 }
 
-            }
-            catch (Exception ex)
-            {
-                success = false;
-                message = "An error occurred while trying to update /create catgeory: " + ex.Message;
-            }
-
-            return new ApiResponse { Success = success, Message = message, Data = newCategory, DataCount = (newCategory == null) ? 0 : 1 };
+           
+            return Ok(new ApiResponse { Success = success, Message = message, Data = newCategory, DataCount = (newCategory == null) ? 0 : 1 });
         }
     }
 }

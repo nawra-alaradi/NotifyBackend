@@ -53,8 +53,8 @@ namespace PostSignup
                 }
 
                 //  Check if user already exists (idempotency)
-                var existingUser = await _db.Users
-                    .FirstOrDefaultAsync(u => u.CognitoSub == cognitoSub);
+                var existingUser =  _db.Users
+                    .FirstOrDefault(u => u.Email.Equals (email));
 
                 if (existingUser == null)
                 {
@@ -68,7 +68,7 @@ namespace PostSignup
                     };
 
                     _db.Users.Add(newUser);
-                    await _db.SaveChangesAsync();
+                     _db.SaveChanges();
 
                     LambdaLogger.Log($"User added to DB: {cognitoSub}");
                 }

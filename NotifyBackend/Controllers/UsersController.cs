@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Amazon.CognitoIdentityProvider;
+using Amazon.CognitoIdentityProvider.Model;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NotifyBackend.DTO;
 using NotifyBackend.Models;
 using NotifyBackend.Utils;
 using System.Security.Claims;
@@ -151,19 +154,12 @@ namespace NotifyBackend.Controllers
         }
 
 
-        //// PUT api/<UsersController>/5
-        //[HttpPut("{id}")]
-        //public void Put(int id, [FromBody] Users user)
-        //{
-        //}
-
         // DELETE api/<UsersController>/5
-        [HttpDelete("{id}")]
-        public ActionResult<ApiResponse> Delete(int id)
+        [HttpDelete("DeleteAccount")]
+        public async Task <ActionResult<ApiResponse>> DeleteAccount()
         {
 
-     
-            dynamic? targetUser = null;
+
             if (User.Identity == null || !User.Identity.IsAuthenticated)
                 return Unauthorized(new ApiResponse
                 {
@@ -172,75 +168,150 @@ namespace NotifyBackend.Controllers
                     Data = null,
                     DataCount = 0
                 });
-            targetUser = _db.Users.FirstOrDefault(n => n.ID == id);
+            string? cognitoSub = User.Identity.GetUserSub();
+            Users? user = User.Identity.GetNotifyUser(_db);
 
-            if (targetUser == null) return NotFound(new ApiResponse
+            if (string.IsNullOrEmpty(cognitoSub) || user == null)
+                return NotFound(new ApiResponse
+                {
+                    Success = false,
+                    Message = "Target user record not found",
+                    Data = null,
+                    DataCount = 0
+            });
+
+            ///delete user data from db first, then delete from cognito using AWS SDK 
+            var notes =  _db.Notes.Where(n => n.UserID == user.ID).ToList();
+            var noteIds = notes.Select(n => n.ID).ToList();
+            var media = _db.Media.Where(m => noteIds.Contains(m.NoteID)).ToList();
+
+            //TODO: delete s3 files later
+            ModelState.Clear();
+            _db.Notes.RemoveRange(notes);
+            _db.Media.RemoveRange(media);
+            _db.Users.Remove(user);
+            _db.SaveChanges();
+
+            // 2. Delete from Cognito
+            var cognitoClient = new AmazonCognitoIdentityProviderClient();
+            await cognitoClient.AdminDeleteUserAsync(new AdminDeleteUserRequest
             {
-                Success = false,
-                Message = "Target user record not found",
-                Data = null,
-                DataCount = 0
+                UserPoolId = SecretsConfiguration.FromEnvironment().Cognito.UserPoolId,
+                Username = cognitoSub
             });
 
 
-
-              
-                    ModelState.Clear();
-                    _db.Users.Remove(targetUser);
-                    _db.SaveChanges();
-
-          
-            return Ok(new ApiResponse { Success = true, Message = "User Deleted Successfully", Data = targetUser, DataCount =  1 });
+            return Ok(new ApiResponse { Success = true, Message = "User Deleted Successfully", Data = user, DataCount = 1 });
         }
 
 
+        //// DELETE api/<UsersController>/5
+        //[HttpDelete("{id}")]
+        //public ActionResult<ApiResponse> Delete(int id)
+        //{
 
-        // Called by Flutter right after login to sync the Cognito user
-        // into your SQL Server Users table
-        [HttpPost("sync")]
-        public async Task<IActionResult> SyncUser()
-        {
 
-            // Cognito puts the unique user ID in the "sub" claim
-            var cognitoSub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                          ?? User.FindFirst("sub")?.Value;
-            var email = User.FindFirst("email")?.Value;
-            var name = User.FindFirst("name")?.Value;
+        //    dynamic? targetUser = null;
+        //    if (User.Identity == null || !User.Identity.IsAuthenticated)
+        //        return Unauthorized(new ApiResponse
+        //        {
+        //            Success = false,
+        //            Message = "User is not authenticated",
+        //            Data = null,
+        //            DataCount = 0
+        //        });
+        //    targetUser = _db.Users.FirstOrDefault(n => n.ID == id);
 
-            if (cognitoSub == null)
-                return Unauthorized("No sub claim found in token.");
+        //    if (targetUser == null) return NotFound(new ApiResponse
+        //    {
+        //        Success = false,
+        //        Message = "Target user record not found",
+        //        Data = null,
+        //        DataCount = 0
+        //    });
 
-            var user = await _db.Users
-                .FirstOrDefaultAsync(u => u.CognitoSub == cognitoSub);
 
-            if (user == null)
-            {
-                user = new Users
-                {
-                    CognitoSub = cognitoSub,
-                    Email = email ?? string.Empty,
-                    Name = name ?? string.Empty,
-                    CreatedAt = DateTime.UtcNow,
-                    LastModified = DateTime.UtcNow
-                };
-                _db.Users.Add(user);
-                await _db.SaveChangesAsync();
-            }
 
-            return Ok(user);
-        }
+
+        //            ModelState.Clear();
+        //            _db.Users.Remove(targetUser);
+        //            _db.SaveChanges();
+
+
+        //    return Ok(new ApiResponse { Success = true, Message = "User Deleted Successfully", Data = targetUser, DataCount =  1 });
+        //}
+
+
+
+        //    // Called by Flutter right after login to sync the Cognito user
+        //    // into your SQL Server Users table
+        //    [HttpPost("sync")]
+        //    public async Task<IActionResult> SyncUser()
+        //    {
+
+        //        // Cognito puts the unique user ID in the "sub" claim
+        //        var cognitoSub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+        //                      ?? User.FindFirst("sub")?.Value;
+        //        var email = User.FindFirst("email")?.Value;
+        //        var name = User.FindFirst("name")?.Value;
+
+        //        if (cognitoSub == null)
+        //            return Unauthorized("No sub claim found in token.");
+
+        //        var user = await _db.Users
+        //            .FirstOrDefaultAsync(u => u.CognitoSub == cognitoSub);
+
+        //        if (user == null)
+        //        {
+        //            user = new Users
+        //            {
+        //                CognitoSub = cognitoSub,
+        //                Email = email ?? string.Empty,
+        //                Name = name ?? string.Empty,
+        //                CreatedAt = DateTime.UtcNow,
+        //                LastModified = DateTime.UtcNow
+        //            };
+        //            _db.Users.Add(user);
+        //            await _db.SaveChangesAsync();
+        //        }
+
+        //        return Ok(user);
+        //    }
 
         [HttpGet("me")]
-        public async Task<IActionResult> GetMe()
+        public async Task<ActionResult<ApiResponse>> GetMe()
         {
-            var cognitoSub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                          ?? User.FindFirst("sub")?.Value;
 
-            var user = await _db.Users
-                .FirstOrDefaultAsync(u => u.CognitoSub.Equals(cognitoSub));
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+                return Unauthorized(new ApiResponse
+                {
+                    Success = false,
+                    Message = "User is not authenticated",
+                    Data = null,
+                    DataCount = 0
+                });
+           CognitoUser user = new CognitoUser
+           {
+               Sub = User.Identity.GetUserSub() ?? "",
+               Email = User.Identity.GetUserEmail() ?? "",
+               Name = User.Identity.GetUserName() ?? "",
+               Picture = User.FindFirst("picture")?.Value ?? "",
+               EmailVerified = bool.TryParse(User.FindFirst("email_verified")?.Value, out var emailVerified) && emailVerified,
+               Username = User.Identity.GetUserName() ?? "",
+               IdentityProvider = User.FindFirst("identities")?.Value ?? "Cognito",
+           };
 
-            return user == null ? NotFound("User Not Found") : Ok(user);
+
+
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Cognito User Record modelled Successfully",
+                DataCount = 1,
+                Data = user
+            });
         }
     }
+
 
 }
