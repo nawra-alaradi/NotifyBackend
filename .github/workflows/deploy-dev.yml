@@ -1,0 +1,88 @@
+name: Deploy to Lambda (dev)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-notify-backend:
+    name: Deploy NotifyBackend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0'        # change to your .NET version
+
+      - name: Install Lambda deploy tool
+        run: dotnet tool install -g Amazon.Lambda.Tools
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy NotifyBackend to Lambda
+        working-directory: ./NotifyBackend
+        run: |
+          dotnet lambda deploy-function \
+            ${{ secrets.LAMBDA_NOTIFY_BACKEND }}
+
+  deploy-post-signup:
+    name: Deploy PostSignup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0'
+
+      - name: Install Lambda deploy tool
+        run: dotnet tool install -g Amazon.Lambda.Tools
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy PostSignup to Lambda
+        working-directory: ./PostSignup
+        run: |
+          dotnet lambda deploy-function \
+            ${{ secrets.LAMBDA_POST_SIGNUP }}
+
+  deploy-pre-signup:
+    name: Deploy PreSignup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0'
+
+      - name: Install Lambda deploy tool
+        run: dotnet tool install -g Amazon.Lambda.Tools
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy PreSignup to Lambda
+        working-directory: ./PreSignup
+        run: |
+          dotnet lambda deploy-function \
+            ${{ secrets.LAMBDA_PRE_SIGNUP }}
