@@ -55,7 +55,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy PostSignup to Lambda
-        working-directory: ./PostSignup
+        working-directory: ./PostSignup/src/PostSignup #path to .csproj file
         run: |
           dotnet lambda deploy-function \
             ${{ secrets.LAMBDA_POST_SIGNUP }}
@@ -82,7 +82,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy PreSignup to Lambda
-        working-directory: ./PreSignup
+        working-directory: ./PreSignup/src/PreSignup #path to .csproj file
         run: |
           dotnet lambda deploy-function \
             ${{ secrets.LAMBDA_PRE_SIGNUP }}
