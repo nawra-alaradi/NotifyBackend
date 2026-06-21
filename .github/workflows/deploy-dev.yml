@@ -3,7 +3,7 @@ name: Deploy to Lambda (dev)
 on:
   push:
     branches:
-      - main
+      - deploy-dev
 
 jobs:
   deploy-notify-backend:
